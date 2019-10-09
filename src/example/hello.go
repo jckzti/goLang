@@ -17,6 +17,6 @@ func main() {
 		b := []int{5, 4, 3, 2, 1}
 		b = append(b, 13)
 		a[2] = 7
-		fmt.Println(a[1] + b[5])
+		fmt.Println(a[2] + b[5])
 	}
 }
