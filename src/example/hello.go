@@ -8,12 +8,14 @@ import (
 	"github.com/gorilla/mux"
 )
 
+//UserConnection usada para guardar os dados da conexão para uso posterior no PHP
 type UserConnection struct {
 	Dsn      string `json:"dsn"`
 	User     string `json:"user"`
 	Password string `json:"password"`
 }
 
+//Field usada para guardar os dados para servirem de base para construção dinâmica dos campos em tela
 type Field struct {
 	Name  string `json:"name"`
 	Type  string `json:"type"`
@@ -44,10 +46,12 @@ func main() {
 
 }
 
+//GetConn function
 func GetConn(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userConnection)
 }
 
+//CreateField function
 func CreateField(w http.ResponseWriter, r *http.Request) {
 	var field Field
 	_ = json.NewDecoder(r.Body).Decode(&field)
@@ -68,6 +72,7 @@ func CreateField(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(fields)
 }
 
+//GetField function
 func GetField(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for _, item := range fields {
@@ -79,10 +84,12 @@ func GetField(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(&Field{})
 }
 
+//GetFields function
 func GetFields(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(fields)
 }
 
+//DeleteField function
 func DeleteField(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for index, item := range fields {
