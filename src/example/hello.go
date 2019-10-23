@@ -21,12 +21,20 @@ type Address struct {
 }
 
 type UserConnection struct {
-	Dsn      string `json:dsn`
-	User     string `json:user`
-	Password string `json:password`
+	Dsn      string `json:"dsn"`
+	User     string `json:"user"`
+	Password string `json:"password"`
+}
+
+type Field struct {
+	Name  string `json:"name"`
+	Type  string `json:"type"`
+	Value string `json:"value"`
+	Title string `json:"title"`
 }
 
 var people []Person
+var fields []Field
 var userConnection UserConnection
 
 // função principal
@@ -42,16 +50,54 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/contato", GetPeople).Methods("GET")
-	router.HandleFunc("/conn", GetConn).Methods("GET")
 	router.HandleFunc("/contato/{id}", GetPerson).Methods("GET")
 	router.HandleFunc("/contato/{id}", CreatePerson).Methods("POST")
 	router.HandleFunc("/contato/{id}", DeletePerson).Methods("DELETE")
+
+	router.HandleFunc("/conn", GetConn).Methods("GET")
+	router.HandleFunc("/fields", GetFields).Methods("GET")
+	router.HandleFunc("/field/{name}", GetField).Methods("GET")
+	router.HandleFunc("/field", CreateField).Methods("POST")
+
 	log.Fatal(http.ListenAndServe(":8000", router))
 
 }
 
 func GetConn(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userConnection)
+}
+
+func CreateField(w http.ResponseWriter, r *http.Request) {
+	var field Field
+	_ = json.NewDecoder(r.Body).Decode(&field)
+
+	for i, item := range fields {
+		if item.Name == field.Name {
+			fields[i].Type = field.Type
+			fields[i].Value = field.Value
+			//json.NewEncoder(w).Encode("{ 'Response':'atualizado'")
+			//json.NewEncoder(w).Encode(fields[i])
+			json.NewEncoder(w).Encode(fields)
+			return
+		}
+	}
+	fields = append(fields, field)
+	json.NewEncoder(w).Encode(fields)
+}
+
+func GetField(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	for _, item := range fields {
+		if item.Name == params["name"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(&Field{})
+}
+
+func GetFields(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(fields)
 }
 
 func GetPeople(w http.ResponseWriter, r *http.Request) {
