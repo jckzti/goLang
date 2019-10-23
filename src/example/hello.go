@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+
 	"github.com/gorilla/mux"
 )
 
@@ -19,10 +20,21 @@ type Address struct {
 	State string `json:"state,omitempty"`
 }
 
+type UserConnection struct {
+	Dsn      string `json:dsn`
+	User     string `json:user`
+	Password string `json:password`
+}
+
 var people []Person
+var userConnection UserConnection
 
 // função principal
 func main() {
+
+	userConnection.Dsn = "mysql:dbname=web;host=127.0.0.1"
+	userConnection.User = "root"
+	userConnection.Password = ""
 
 	people = append(people, Person{ID: "1", Firstname: "John", Lastname: "Doe", Address: &Address{City: "City X", State: "State X"}})
 	people = append(people, Person{ID: "2", Firstname: "Koko", Lastname: "Doe", Address: &Address{City: "City Z", State: "State Y"}})
@@ -30,11 +42,16 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/contato", GetPeople).Methods("GET")
+	router.HandleFunc("/conn", GetConn).Methods("GET")
 	router.HandleFunc("/contato/{id}", GetPerson).Methods("GET")
 	router.HandleFunc("/contato/{id}", CreatePerson).Methods("POST")
 	router.HandleFunc("/contato/{id}", DeletePerson).Methods("DELETE")
 	log.Fatal(http.ListenAndServe(":8000", router))
 
+}
+
+func GetConn(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(userConnection)
 }
 
 func GetPeople(w http.ResponseWriter, r *http.Request) {
