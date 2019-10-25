@@ -23,8 +23,14 @@ type Field struct {
 	Title string `json:"title"`
 }
 
+type Form struct {
+	FormName string  `json:"formName"`
+	Fields   []Field `json:"field"`
+}
+
 var fields []Field
 var userConnection UserConnection
+var forms []Form
 
 // função principal
 func main() {
@@ -37,12 +43,28 @@ func main() {
 
 	router := mux.NewRouter()
 	router.HandleFunc("/conn", GetConn).Methods("GET")
-	router.HandleFunc("/fields", GetFields).Methods("GET")
-	router.HandleFunc("/field/{name}", GetField).Methods("GET")
-	router.HandleFunc("/field", CreateField).Methods("POST")
-	router.HandleFunc("/field/{name}", DeleteField).Methods("DELETE")
+	CreateFieldRequests(router)
+	CreateFormRequests(router)
 
 	log.Fatal(http.ListenAndServe(":8000", router))
+
+}
+
+//CreateFieldRequests function
+func CreateFieldRequests(router *mux.Router) {
+	router.HandleFunc("/fields", GetFields).Methods("GET")
+	router.HandleFunc("/field/{name}", GetField).Methods("GET")
+	router.HandleFunc("/field/{formName}", CreateField).Methods("POST")
+	router.HandleFunc("/field/{name}", DeleteField).Methods("DELETE")
+}
+
+//CreateFormRequests function
+func CreateFormRequests(router *mux.Router) {
+	router.HandleFunc("/forms", GetForms).Methods("GET")
+}
+
+//GetForms
+func GetForms(w http.ResponseWriter, r *http.Request) {
 
 }
 
@@ -56,11 +78,18 @@ func CreateField(w http.ResponseWriter, r *http.Request) {
 	var field Field
 	_ = json.NewDecoder(r.Body).Decode(&field)
 
-	for i, item := range fields {
+	formName := mux.Vars(r)["formName"]
+
+	for i, form := range forms {
+		if form.FormName == formName {
+			AddFieldForm(form, field, i)
+			return
+		}
+	}
+
+	for x, item := range fields {
 		if item.Name == field.Name {
-			fields[i] = field
-			//json.NewEncoder(w).Encode("{ 'Response':'atualizado'")
-			//json.NewEncoder(w).Encode(fields[i])
+			fields[x] = field
 			json.NewEncoder(w).Encode(fields)
 			return
 		}
@@ -69,7 +98,26 @@ func CreateField(w http.ResponseWriter, r *http.Request) {
 		field.Type = "text"
 	}
 	fields = append(fields, field)
+
+	forms = append(forms, Form{FormName: formName, Fields: fields})
+
 	json.NewEncoder(w).Encode(fields)
+}
+
+//AddFieldForm function
+func AddFieldForm(form Form, field Field, position int) {
+
+	for x, item := range forms[position].Fields {
+		if item.Name == field.Name {
+			forms[position].Fields[x] = field
+			return
+		}
+	}
+	if field.Type == "" {
+		field.Type = "text"
+	}
+
+	forms[position].Fields = append(forms[position].Fields, field)
 }
 
 //GetField function
