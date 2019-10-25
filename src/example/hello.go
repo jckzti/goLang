@@ -61,11 +61,37 @@ func CreateFieldRequests(router *mux.Router) {
 //CreateFormRequests function
 func CreateFormRequests(router *mux.Router) {
 	router.HandleFunc("/forms", GetForms).Methods("GET")
+	router.HandleFunc("/forms/{formName}", GetForm).Methods("GET")
+	router.HandleFunc("/forms/{name}", DeleteForm).Methods("DELETE")
 }
 
-//GetForms
-func GetForms(w http.ResponseWriter, r *http.Request) {
+//GetForm function
+func GetForm(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	for _, item := range forms {
+		if item.FormName == params["forms"] {
+			json.NewEncoder(w).Encode(item)
+			return
+		}
+	}
+	json.NewEncoder(w).Encode(&Form{})
+}
 
+//GetForms function
+func GetForms(w http.ResponseWriter, r *http.Request) {
+	json.NewEncoder(w).Encode(forms)
+}
+
+//DeleteForm function
+func DeleteForm(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	for index, item := range forms {
+		if item.FormName == params["formName"] {
+			forms = append(forms[:index], forms[index+1:]...)
+			break
+		}
+		json.NewEncoder(w).Encode(forms)
+	}
 }
 
 //GetConn function
