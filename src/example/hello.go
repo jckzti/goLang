@@ -26,7 +26,7 @@ type Field struct {
 //Form usada para guardar os dados para servirem de base para construção dinâmica de forms em tela
 type Form struct {
 	FormName string  `json:"formName"`
-	Fields   []Field `json:"field"`
+	Fields   []Field `json:"fields"`
 }
 
 var fields []Field
@@ -145,6 +145,10 @@ func AddFieldForm(form Form, field Field, position int) {
 		field.Type = "text"
 	}
 
+	if field.Title == "" {
+		field.Title = field.Name
+	}
+
 	forms[position].Fields = append(forms[position].Fields, field)
 }
 
@@ -181,11 +185,16 @@ func GetFields(w http.ResponseWriter, r *http.Request) {
 //DeleteField function
 func DeleteField(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	for index, item := range fields {
-		if item.Name == params["name"] {
-			fields = append(fields[:index], fields[index+1:]...)
-			break
+	for indexForm, formx := range forms {
+		if formx.FormName == params["formName"] {
+			for index, item := range formx.Fields {
+				if item.Name == params["name"] {
+					forms[indexForm].Fields = append(forms[indexForm].Fields[:index], forms[indexForm].Fields[index+1:]...)
+					break
+				}
+			}
+			json.NewEncoder(w).Encode(forms[indexForm])
+			return
 		}
-		json.NewEncoder(w).Encode(fields)
 	}
 }
