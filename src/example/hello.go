@@ -121,19 +121,20 @@ func CreateField(w http.ResponseWriter, r *http.Request) {
 	var field Field
 	_ = json.NewDecoder(r.Body).Decode(&field)
 
-	formName := mux.Vars(r)["formName"]
-
-	for i, form := range forms {
-		if form.FormName == formName {
-			AddFieldForm(form, field, i)
-			return
+	if field.Name != "" {
+		formName := mux.Vars(r)["formName"]
+		for i, formx := range forms {
+			if formx.FormName == formName {
+				AddFieldForm(formx, field, i)
+				json.NewEncoder(w).Encode(forms)
+				return
+			}
 		}
 	}
 }
 
 //AddFieldForm function
 func AddFieldForm(form Form, field Field, position int) {
-
 	for i, item := range forms[position].Fields {
 		if item.Name == field.Name {
 			forms[position].Fields[i] = field
