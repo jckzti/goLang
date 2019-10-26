@@ -151,18 +151,31 @@ func AddFieldForm(form Form, field Field, position int) {
 //GetField function
 func GetField(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	for _, item := range fields {
-		if item.Name == params["name"] {
-			json.NewEncoder(w).Encode(item)
+
+	for _, item := range forms {
+		if item.FormName == params["formName"] {
+			for _, item := range item.Fields {
+				if item.Name == params["name"] {
+					json.NewEncoder(w).Encode(item)
+					return
+				}
+			}
 			return
 		}
 	}
+
 	json.NewEncoder(w).Encode(&Field{})
 }
 
 //GetFields function
 func GetFields(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(fields)
+	params := mux.Vars(r)
+	for _, item := range forms {
+		if item.FormName == params["formName"] {
+			json.NewEncoder(w).Encode(item.Fields)
+			return
+		}
+	}
 }
 
 //DeleteField function
