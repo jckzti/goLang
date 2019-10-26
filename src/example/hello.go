@@ -23,6 +23,7 @@ type Field struct {
 	Title string `json:"title"`
 }
 
+//Form usada para guardar os dados para servirem de base para construção dinâmica de forms em tela
 type Form struct {
 	FormName string  `json:"formName"`
 	Fields   []Field `json:"field"`
@@ -32,7 +33,7 @@ var fields []Field
 var userConnection UserConnection
 var forms []Form
 
-// função principal
+//Função principal
 func main() {
 
 	userConnection.Dsn = "mysql:dbname=web;host=127.0.0.1"
@@ -52,24 +53,25 @@ func main() {
 
 //CreateFieldRequests function
 func CreateFieldRequests(router *mux.Router) {
-	router.HandleFunc("/fields", GetFields).Methods("GET")
-	router.HandleFunc("/field/{name}", GetField).Methods("GET")
+	router.HandleFunc("/fields/{formName}", GetFields).Methods("GET")
+	router.HandleFunc("/field/{formName}/{name}", GetField).Methods("GET")
 	router.HandleFunc("/field/{formName}", CreateField).Methods("POST")
-	router.HandleFunc("/field/{name}", DeleteField).Methods("DELETE")
+	router.HandleFunc("/field/{formName}/{name}", DeleteField).Methods("DELETE")
 }
 
 //CreateFormRequests function
 func CreateFormRequests(router *mux.Router) {
 	router.HandleFunc("/forms", GetForms).Methods("GET")
-	router.HandleFunc("/forms/{formName}", GetForm).Methods("GET")
-	router.HandleFunc("/forms/{name}", DeleteForm).Methods("DELETE")
+	router.HandleFunc("/form/{formName}", GetForm).Methods("GET")
+	router.HandleFunc("/form", CreateForm).Methods("POST")
+	router.HandleFunc("/form/{formName}", DeleteForm).Methods("DELETE")
 }
 
 //GetForm function
 func GetForm(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for _, item := range forms {
-		if item.FormName == params["forms"] {
+		if item.FormName == params["formName"] {
 			json.NewEncoder(w).Encode(item)
 			return
 		}
@@ -88,10 +90,25 @@ func DeleteForm(w http.ResponseWriter, r *http.Request) {
 	for index, item := range forms {
 		if item.FormName == params["formName"] {
 			forms = append(forms[:index], forms[index+1:]...)
+			json.NewEncoder(w).Encode(forms)
 			break
 		}
 		json.NewEncoder(w).Encode(forms)
 	}
+}
+
+//CreateForm function
+func CreateForm(w http.ResponseWriter, r *http.Request) {
+	var form Form
+	_ = json.NewDecoder(r.Body).Decode(&form)
+	for _, formx := range forms {
+		if formx.FormName == form.FormName {
+			json.NewEncoder(w).Encode(forms)
+			return
+		}
+	}
+	forms = append(forms, form)
+	json.NewEncoder(w).Encode(forms)
 }
 
 //GetConn function
@@ -112,30 +129,14 @@ func CreateField(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-
-	for x, item := range fields {
-		if item.Name == field.Name {
-			fields[x] = field
-			json.NewEncoder(w).Encode(fields)
-			return
-		}
-	}
-	if field.Type == "" {
-		field.Type = "text"
-	}
-	fields = append(fields, field)
-
-	forms = append(forms, Form{FormName: formName, Fields: fields})
-
-	json.NewEncoder(w).Encode(fields)
 }
 
 //AddFieldForm function
 func AddFieldForm(form Form, field Field, position int) {
 
-	for x, item := range forms[position].Fields {
+	for i, item := range forms[position].Fields {
 		if item.Name == field.Name {
-			forms[position].Fields[x] = field
+			forms[position].Fields[i] = field
 			return
 		}
 	}
