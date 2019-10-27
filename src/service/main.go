@@ -5,33 +5,21 @@ import (
 	"log"
 	"net/http"
 
+	structs "github.com/servicego/src/service/model"
+
 	"github.com/gorilla/mux"
 )
 
 //UserConnection usada para guardar os dados da conexão para uso posterior no PHP
-type UserConnection struct {
-	Dsn      string `json:"dsn"`
-	User     string `json:"user"`
-	Password string `json:"password"`
-}
+// type UserConnection struct {
+// 	Dsn      string `json:"dsn"`
+// 	User     string `json:"user"`
+// 	Password string `json:"password"`
+// }
 
-//Field usada para guardar os dados para servirem de base para construção dinâmica dos campos em tela
-type Field struct {
-	Name  string `json:"name"`
-	Type  string `json:"type"`
-	Value string `json:"value"`
-	Title string `json:"title"`
-}
-
-//Form usada para guardar os dados para servirem de base para construção dinâmica de forms em tela
-type Form struct {
-	FormName string  `json:"formName"`
-	Fields   []Field `json:"fields"`
-}
-
-var fields []Field
-var userConnection UserConnection
-var forms []Form
+var fields []structs.Field
+var userConnection structs.UserConnection
+var forms []structs.Form
 
 //Função principal
 func main() {
@@ -40,35 +28,35 @@ func main() {
 	userConnection.User = "root"
 	userConnection.Password = ""
 
-	fields = append(fields, Field{Name: "nome", Type: "text", Title: "Nome"})
+	fields = append(fields, structs.Field{Name: "nome", Type: "text", Title: "Nome"})
 
 	router := mux.NewRouter()
-	router.HandleFunc("/conn", GetConn).Methods("GET")
-	CreateFieldRequests(router)
-	CreateFormRequests(router)
+	router.HandleFunc("/conn", getConn).Methods("GET")
+	createFieldRequests(router)
+	createFormRequests(router)
 
 	log.Fatal(http.ListenAndServe(":8000", router))
 
 }
 
 //CreateFieldRequests function
-func CreateFieldRequests(router *mux.Router) {
-	router.HandleFunc("/fields/{formName}", GetFields).Methods("GET")
-	router.HandleFunc("/field/{formName}/{name}", GetField).Methods("GET")
-	router.HandleFunc("/field/{formName}", CreateField).Methods("POST")
-	router.HandleFunc("/field/{formName}/{name}", DeleteField).Methods("DELETE")
+func createFieldRequests(router *mux.Router) {
+	router.HandleFunc("/fields/{formName}", getFields).Methods("GET")
+	router.HandleFunc("/field/{formName}/{name}", getField).Methods("GET")
+	router.HandleFunc("/field/{formName}", createField).Methods("POST")
+	router.HandleFunc("/field/{formName}/{name}", deleteField).Methods("DELETE")
 }
 
 //CreateFormRequests function
-func CreateFormRequests(router *mux.Router) {
-	router.HandleFunc("/forms", GetForms).Methods("GET")
-	router.HandleFunc("/form/{formName}", GetForm).Methods("GET")
-	router.HandleFunc("/form", CreateForm).Methods("POST")
-	router.HandleFunc("/form/{formName}", DeleteForm).Methods("DELETE")
+func createFormRequests(router *mux.Router) {
+	router.HandleFunc("/forms", getForms).Methods("GET")
+	router.HandleFunc("/form/{formName}", getForm).Methods("GET")
+	router.HandleFunc("/form", createForm).Methods("POST")
+	router.HandleFunc("/form/{formName}", deleteForm).Methods("DELETE")
 }
 
 //GetForm function
-func GetForm(w http.ResponseWriter, r *http.Request) {
+func getForm(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for _, item := range forms {
 		if item.FormName == params["formName"] {
@@ -76,16 +64,14 @@ func GetForm(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(&Form{})
+	json.NewEncoder(w).Encode(&structs.Form{})
 }
 
-//GetForms function
-func GetForms(w http.ResponseWriter, r *http.Request) {
+func getForms(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(forms)
 }
 
-//DeleteForm function
-func DeleteForm(w http.ResponseWriter, r *http.Request) {
+func deleteForm(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for index, item := range forms {
 		if item.FormName == params["formName"] {
@@ -97,9 +83,8 @@ func DeleteForm(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//CreateForm function
-func CreateForm(w http.ResponseWriter, r *http.Request) {
-	var form Form
+func createForm(w http.ResponseWriter, r *http.Request) {
+	var form structs.Form
 	_ = json.NewDecoder(r.Body).Decode(&form)
 	for _, formx := range forms {
 		if formx.FormName == form.FormName {
@@ -111,21 +96,19 @@ func CreateForm(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(forms)
 }
 
-//GetConn function
-func GetConn(w http.ResponseWriter, r *http.Request) {
+func getConn(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(userConnection)
 }
 
-//CreateField function
-func CreateField(w http.ResponseWriter, r *http.Request) {
-	var field Field
+func createField(w http.ResponseWriter, r *http.Request) {
+	var field structs.Field
 	_ = json.NewDecoder(r.Body).Decode(&field)
 
 	if field.Name != "" {
 		formName := mux.Vars(r)["formName"]
 		for i, formx := range forms {
 			if formx.FormName == formName {
-				AddFieldForm(formx, field, i)
+				addFieldForm(formx, field, i)
 				json.NewEncoder(w).Encode(forms)
 				return
 			}
@@ -133,8 +116,7 @@ func CreateField(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//AddFieldForm function
-func AddFieldForm(form Form, field Field, position int) {
+func addFieldForm(form structs.Form, field structs.Field, position int) {
 	for i, item := range forms[position].Fields {
 		if item.Name == field.Name {
 			forms[position].Fields[i] = field
@@ -152,8 +134,7 @@ func AddFieldForm(form Form, field Field, position int) {
 	forms[position].Fields = append(forms[position].Fields, field)
 }
 
-//GetField function
-func GetField(w http.ResponseWriter, r *http.Request) {
+func getField(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 
 	for _, item := range forms {
@@ -168,11 +149,10 @@ func GetField(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode(&Field{})
+	json.NewEncoder(w).Encode(&structs.Field{})
 }
 
-//GetFields function
-func GetFields(w http.ResponseWriter, r *http.Request) {
+func getFields(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for _, item := range forms {
 		if item.FormName == params["formName"] {
@@ -182,8 +162,7 @@ func GetFields(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-//DeleteField function
-func DeleteField(w http.ResponseWriter, r *http.Request) {
+func deleteField(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	for indexForm, formx := range forms {
 		if formx.FormName == params["formName"] {
