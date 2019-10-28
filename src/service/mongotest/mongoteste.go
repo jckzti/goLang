@@ -36,7 +36,7 @@ func CreatePersonEndpoint(response http.ResponseWriter, resquest *http.Request) 
 func TestaMongo(router *mux.Router) {
 	fmt.Println("Testa mongo")
 	var err error
-	client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27108"))
+	client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017/"))
 
 	if err != nil {
 		fmt.Println("Erro ao criar client")
@@ -45,6 +45,10 @@ func TestaMongo(router *mux.Router) {
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	err = client.Connect(ctx)
+	if err != nil {
+		fmt.Println("Erro ao conectar")
+		log.Fatal(err)
+	}
 
 	ctx, _ = context.WithTimeout(context.Background(), 2*time.Second)
 	err = client.Ping(ctx, readpref.Primary())
@@ -54,9 +58,10 @@ func TestaMongo(router *mux.Router) {
 		log.Fatal(err)
 	}
 
-	//client, _ := mongo.NewClient(options.Client().ApplyURI("mongodb://localhost:27017"))
 	_ = client
 	router.HandleFunc("/person", CreatePersonEndpoint).Methods("POST")
-	//_ = client.Connect(ctx, options.Client().ApplyURI())
+
+	//start mongo
+	//$ mongod --dbpath=/Users/jonathancani/data/db
 
 }

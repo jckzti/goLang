@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -32,9 +31,6 @@ func main() {
 
 	fields = append(fields, structs.Field{Name: "nome", Type: "text", Title: "Nome"})
 
-	fmt.Println("antes do teste do mongo")
-
-	fmt.Println("depois do teste do mongo")
 	router := mux.NewRouter()
 	mongoteste.TestaMongo(router)
 	router.HandleFunc("/conn", getConn).Methods("GET")
@@ -42,7 +38,6 @@ func main() {
 	createFormRequests(router)
 
 	log.Fatal(http.ListenAndServe(":8000", router))
-
 }
 
 //CreateFieldRequests function
