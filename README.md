@@ -4,4 +4,11 @@ Criador automático de formulários e campos para uso em HTML
 
 # Dependencias:
 
-go get github.com/BurntSushi/toml gopkg.in/mgo.v2 github.com/gorilla/mux
+No MacOS
+
+/usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+brew install dep
+dep init
+dep ensure -add "go.mongodb.org/mongo-driver/mongo@~1.1.0"
+
+
