@@ -33,9 +33,10 @@ func main() {
 	fields = append(fields, structs.Field{Name: "nome", Type: "text", Title: "Nome"})
 
 	fmt.Println("antes do teste do mongo")
-	mongoteste.TestaMongo()
+
 	fmt.Println("depois do teste do mongo")
 	router := mux.NewRouter()
+	mongoteste.TestaMongo(router)
 	router.HandleFunc("/conn", getConn).Methods("GET")
 	createFieldRequests(router)
 	createFormRequests(router)
@@ -61,60 +62,69 @@ func createFormRequests(router *mux.Router) {
 }
 
 //GetForm function
-func getForm(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+func getForm(response http.ResponseWriter, request *http.Request) {
+	params := mux.Vars(request)
 	for _, item := range forms {
 		if item.FormName == params["formName"] {
-			json.NewEncoder(w).Encode(item)
+			response.Header().Add("content-type", "application/json")
+			json.NewEncoder(response).Encode(item)
 			return
 		}
 	}
-	json.NewEncoder(w).Encode(&structs.Form{})
+	response.Header().Add("content-type", "application/json")
+	json.NewEncoder(response).Encode(&structs.Form{})
 }
 
-func getForms(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(forms)
+func getForms(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+	json.NewEncoder(response).Encode(forms)
 }
 
-func deleteForm(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+func deleteForm(response http.ResponseWriter, request *http.Request) {
+	params := mux.Vars(request)
 	for index, item := range forms {
 		if item.FormName == params["formName"] {
 			forms = append(forms[:index], forms[index+1:]...)
-			json.NewEncoder(w).Encode(forms)
+			response.Header().Add("content-type", "application/json")
+			json.NewEncoder(response).Encode(forms)
 			break
 		}
-		json.NewEncoder(w).Encode(forms)
+		response.Header().Add("content-type", "application/json")
+		json.NewEncoder(response).Encode(forms)
 	}
 }
 
-func createForm(w http.ResponseWriter, r *http.Request) {
+func createForm(response http.ResponseWriter, request *http.Request) {
 	var form structs.Form
-	_ = json.NewDecoder(r.Body).Decode(&form)
+	_ = json.NewDecoder(request.Body).Decode(&form)
 	for _, formx := range forms {
 		if formx.FormName == form.FormName {
-			json.NewEncoder(w).Encode(forms)
+			response.Header().Add("content-type", "application/json")
+			json.NewEncoder(response).Encode(forms)
 			return
 		}
 	}
 	forms = append(forms, form)
-	json.NewEncoder(w).Encode(forms)
+	response.Header().Add("content-type", "application/json")
+	json.NewEncoder(response).Encode(forms)
 }
 
-func getConn(w http.ResponseWriter, r *http.Request) {
-	json.NewEncoder(w).Encode(userConnection)
+func getConn(response http.ResponseWriter, request *http.Request) {
+	response.Header().Add("content-type", "application/json")
+	json.NewEncoder(response).Encode(userConnection)
 }
 
-func createField(w http.ResponseWriter, r *http.Request) {
+func createField(response http.ResponseWriter, request *http.Request) {
 	var field structs.Field
-	_ = json.NewDecoder(r.Body).Decode(&field)
+	_ = json.NewDecoder(request.Body).Decode(&field)
 
 	if field.Name != "" {
-		formName := mux.Vars(r)["formName"]
+		formName := mux.Vars(request)["formName"]
 		for i, formx := range forms {
 			if formx.FormName == formName {
 				addFieldForm(formx, field, i)
-				json.NewEncoder(w).Encode(forms)
+				response.Header().Add("content-type", "application/json")
+				json.NewEncoder(response).Encode(forms)
 				return
 			}
 		}
@@ -139,14 +149,15 @@ func addFieldForm(form structs.Form, field structs.Field, position int) {
 	forms[position].Fields = append(forms[position].Fields, field)
 }
 
-func getField(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+func getField(response http.ResponseWriter, request *http.Request) {
+	params := mux.Vars(request)
 
 	for _, item := range forms {
 		if item.FormName == params["formName"] {
 			for _, item := range item.Fields {
 				if item.Name == params["name"] {
-					json.NewEncoder(w).Encode(item)
+					response.Header().Add("content-type", "application/json")
+					json.NewEncoder(response).Encode(item)
 					return
 				}
 			}
@@ -154,21 +165,23 @@ func getField(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode(&structs.Field{})
+	response.Header().Add("content-type", "application/json")
+	json.NewEncoder(response).Encode(&structs.Field{})
 }
 
-func getFields(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+func getFields(response http.ResponseWriter, request *http.Request) {
+	params := mux.Vars(request)
 	for _, item := range forms {
 		if item.FormName == params["formName"] {
-			json.NewEncoder(w).Encode(item.Fields)
+			response.Header().Add("content-type", "application/json")
+			json.NewEncoder(response).Encode(item.Fields)
 			return
 		}
 	}
 }
 
-func deleteField(w http.ResponseWriter, r *http.Request) {
-	params := mux.Vars(r)
+func deleteField(response http.ResponseWriter, request *http.Request) {
+	params := mux.Vars(request)
 	for indexForm, formx := range forms {
 		if formx.FormName == params["formName"] {
 			for index, item := range formx.Fields {
@@ -177,7 +190,8 @@ func deleteField(w http.ResponseWriter, r *http.Request) {
 					break
 				}
 			}
-			json.NewEncoder(w).Encode(forms[indexForm])
+			response.Header().Add("content-type", "application/json")
+			json.NewEncoder(response).Encode(forms[indexForm])
 			return
 		}
 	}
