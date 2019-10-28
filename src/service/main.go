@@ -2,10 +2,12 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
 	structs "github.com/servicego/src/service/model"
+	mongoteste "github.com/servicego/src/service/mongotest"
 
 	"github.com/gorilla/mux"
 )
@@ -30,6 +32,9 @@ func main() {
 
 	fields = append(fields, structs.Field{Name: "nome", Type: "text", Title: "Nome"})
 
+	fmt.Println("antes do teste do mongo")
+	mongoteste.TestaMongo()
+	fmt.Println("depois do teste do mongo")
 	router := mux.NewRouter()
 	router.HandleFunc("/conn", getConn).Methods("GET")
 	createFieldRequests(router)
