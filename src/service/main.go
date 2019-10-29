@@ -100,6 +100,7 @@ func createForm(response http.ResponseWriter, request *http.Request) {
 		}
 	}
 	forms = append(forms, form)
+	mongoteste.SaveFormData(form, response)
 	response.Header().Add("content-type", "application/json")
 	json.NewEncoder(response).Encode(forms)
 }

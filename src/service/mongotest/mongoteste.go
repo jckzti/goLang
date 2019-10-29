@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	structs "github.com/servicego/src/service/model"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -16,7 +17,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-var client *mongo.Client
+var Client *mongo.Client
 
 type Person struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
@@ -24,11 +25,11 @@ type Person struct {
 	LastName string             `json:"lastname, omitempty" bson:"lastname, omitempty"`
 }
 
-func CreatePersonEndpoint(response http.ResponseWriter, resquest *http.Request) {
+func createPersonEndpoint(response http.ResponseWriter, resquest *http.Request) {
 	response.Header().Add("content-type", "application/json")
 	var person Person
 	json.NewDecoder(resquest.Body).Decode(&person)
-	collection := client.Database("theveloper").Collection("people")
+	collection := Client.Database("theveloper").Collection("people")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	person.ID = primitive.NewObjectID()
 	result, err := collection.InsertOne(ctx, person)
@@ -41,10 +42,10 @@ func CreatePersonEndpoint(response http.ResponseWriter, resquest *http.Request) 
 	json.NewEncoder(response).Encode(result)
 }
 
-func GetPeopleEndpoint(response http.ResponseWriter, request *http.Request) {
+func getPeopleEndpoint(response http.ResponseWriter, request *http.Request) {
 	response.Header().Set("content-type", "application/json")
 	var people []Person
-	collection := client.Database("theveloper").Collection("people")
+	collection := Client.Database("theveloper").Collection("people")
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 	cursor, err := collection.Find(ctx, bson.M{})
 	if err != nil {
@@ -66,34 +67,51 @@ func GetPeopleEndpoint(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(people)
 }
 
+//SaveFormData save form in mongoDB
+func SaveFormData(form structs.Form, response http.ResponseWriter) {
+	collection := Client.Database("theveloper").Collection("forms")
+	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	form.ID = primitive.NewObjectID()
+	//result, err := collection.InsertOne(ctx, form)
+	_, err := collection.InsertOne(ctx, form)
+	if err != nil {
+		log.Println(err)
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`"message" : "` + err.Error() + `"`))
+		return
+	}
+	//json.NewEncoder(response).Encode(result)
+}
+
+//TestaMongo function
 func TestaMongo(router *mux.Router) {
 	fmt.Println("Testa mongo")
 	var err error
-	client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017/"))
+	Client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017/"))
 
 	if err != nil {
-		fmt.Println("Erro ao criar client")
+		fmt.Println("Erro ao criar Client")
 		log.Println(err)
 	}
 
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
-	err = client.Connect(ctx)
+	err = Client.Connect(ctx)
 	if err != nil {
 		fmt.Println("Erro ao conectar")
 		log.Println(err)
 	}
 
 	ctx, _ = context.WithTimeout(context.Background(), 2*time.Second)
-	err = client.Ping(ctx, readpref.Primary())
+	err = Client.Ping(ctx, readpref.Primary())
 
 	if err != nil {
 		fmt.Println("Erro ao pingar")
 		log.Println(err)
 	}
 
-	_ = client
-	router.HandleFunc("/person", CreatePersonEndpoint).Methods("POST")
-	router.HandleFunc("/people", GetPeopleEndpoint).Methods("GET")
+	_ = Client
+	router.HandleFunc("/person", createPersonEndpoint).Methods("POST")
+	router.HandleFunc("/people", getPeopleEndpoint).Methods("GET")
 
 	//start mongo
 	//$ mongod --dbpath=/Users/jonathancani/data/db
