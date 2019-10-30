@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
+	colle "github.com/servicego/src/service/collections"
+	conn "github.com/servicego/src/service/connection"
 	structs "github.com/servicego/src/service/model"
-	mongoteste "github.com/servicego/src/service/mongotest"
 
 	"github.com/gorilla/mux"
 )
@@ -24,7 +26,7 @@ var forms []structs.Form
 
 //Função principal
 func main() {
-
+	fmt.Println("start serviceGO")
 	userConnection.Dsn = "mysql:dbname=web;host=127.0.0.1"
 	userConnection.User = "root"
 	userConnection.Password = ""
@@ -32,8 +34,9 @@ func main() {
 	fields = append(fields, structs.Field{Name: "nome", Type: "text", Title: "Nome"})
 
 	router := mux.NewRouter()
-	mongoteste.TestaMongo(router)
+	conn.CreateConnection(router)
 	router.HandleFunc("/conn", getConn).Methods("GET")
+
 	createFieldRequests(router)
 	createFormRequests(router)
 
@@ -59,6 +62,7 @@ func createFormRequests(router *mux.Router) {
 //GetForm function
 func getForm(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
+	forms, _ = colle.GetFormsData()
 	for _, item := range forms {
 		if item.FormName == params["formName"] {
 			response.Header().Add("content-type", "application/json")
@@ -72,6 +76,11 @@ func getForm(response http.ResponseWriter, request *http.Request) {
 
 func getForms(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
+	//colle.GetFormsData()
+	forms, err := colle.GetFormsData()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
 	json.NewEncoder(response).Encode(forms)
 }
 
@@ -92,17 +101,22 @@ func deleteForm(response http.ResponseWriter, request *http.Request) {
 func createForm(response http.ResponseWriter, request *http.Request) {
 	var form structs.Form
 	_ = json.NewDecoder(request.Body).Decode(&form)
+	response.Header().Add("content-type", "application/json")
 	for _, formx := range forms {
 		if formx.FormName == form.FormName {
-			response.Header().Add("content-type", "application/json")
 			json.NewEncoder(response).Encode(forms)
 			return
 		}
 	}
 	forms = append(forms, form)
-	mongoteste.SaveFormData(form, response)
-	response.Header().Add("content-type", "application/json")
-	json.NewEncoder(response).Encode(forms)
+	form, err := colle.SaveFormData(form)
+	//colle.SaveUserData(form)
+	if err != nil {
+		log.Println(err)
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`"message" : "` + err.Error() + `"`))
+	}
+	json.NewEncoder(response).Encode(form)
 }
 
 func getConn(response http.ResponseWriter, request *http.Request) {

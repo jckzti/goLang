@@ -1,4 +1,4 @@
-package mongoteste
+package connection
 
 import (
 	"context"
@@ -17,12 +17,22 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+//Client responsáve pelas ligação com o mongo
 var Client *mongo.Client
 
+//Person struct test
 type Person struct {
 	ID       primitive.ObjectID `json:"_id,omitempty" bson:"_id,omitempty"`
 	FistName string             `json:"firstname, omitempty" bson:"firstname, omitempty"`
 	LastName string             `json:"lastname, omitempty" bson:"lastname, omitempty"`
+}
+
+//GetConn function for manipulation mongo
+func GetConn() *mongo.Client {
+	if Client == nil {
+		CreateConnection(nil)
+	}
+	return Client
 }
 
 func createPersonEndpoint(response http.ResponseWriter, resquest *http.Request) {
@@ -68,23 +78,21 @@ func getPeopleEndpoint(response http.ResponseWriter, request *http.Request) {
 }
 
 //SaveFormData save form in mongoDB
-func SaveFormData(form structs.Form, response http.ResponseWriter) {
+func SaveFormData(form structs.Form) (structs.Form, error) {
 	collection := Client.Database("theveloper").Collection("forms")
 	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
 	form.ID = primitive.NewObjectID()
 	//result, err := collection.InsertOne(ctx, form)
 	_, err := collection.InsertOne(ctx, form)
 	if err != nil {
-		log.Println(err)
-		response.WriteHeader(http.StatusInternalServerError)
-		response.Write([]byte(`"message" : "` + err.Error() + `"`))
-		return
+		return form, err
 	}
-	//json.NewEncoder(response).Encode(result)
+
+	return form, nil
 }
 
-//TestaMongo function
-func TestaMongo(router *mux.Router) {
+//CreateConnection function
+func CreateConnection(router *mux.Router) {
 	fmt.Println("Testa mongo")
 	var err error
 	Client, err = mongo.NewClient(options.Client().ApplyURI("mongodb://127.0.0.1:27017/"))
@@ -110,9 +118,11 @@ func TestaMongo(router *mux.Router) {
 	}
 
 	_ = Client
-	router.HandleFunc("/person", createPersonEndpoint).Methods("POST")
-	router.HandleFunc("/people", getPeopleEndpoint).Methods("GET")
 
+	if router != nil {
+		router.HandleFunc("/person", createPersonEndpoint).Methods("POST")
+		router.HandleFunc("/people", getPeopleEndpoint).Methods("GET")
+	}
 	//start mongo
 	//$ mongod --dbpath=/Users/jonathancani/data/db
 
