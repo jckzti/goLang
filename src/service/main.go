@@ -181,6 +181,7 @@ func getField(response http.ResponseWriter, request *http.Request) {
 
 func getFields(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
+	forms, _ = colle.GetFormsData()
 	for _, item := range forms {
 		if item.FormName == params["formName"] {
 			response.Header().Add("content-type", "application/json")
