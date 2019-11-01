@@ -25,6 +25,22 @@ func SaveFormData(form structs.Form) (structs.Form, error) {
 	return form, nil
 }
 
+//GetFieldsFormData function
+func GetFieldsFormData(formName string) ([]structs.Field, error) {
+	collection := conn.GetConn().Database("theveloper").Collection("forms")
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+
+	var form structs.Form
+	filter := bson.D{{"formname", formName}}
+
+	err := collection.FindOne(ctx, filter).Decode(form)
+
+	if err != nil {
+		return nil, err
+	}
+	return form.Fields, nil
+}
+
 //GetFormsData function
 func GetFormsData() ([]structs.Form, error) {
 	fmt.Println("")

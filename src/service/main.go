@@ -40,7 +40,7 @@ func main() {
 	createFieldRequests(router)
 	createFormRequests(router)
 
-	log.Fatal(http.ListenAndServe(":8000", router))
+	log.Fatal(http.ListenAndServe(":8001", router))
 }
 
 //CreateFieldRequests function
@@ -181,13 +181,15 @@ func getField(response http.ResponseWriter, request *http.Request) {
 
 func getFields(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
-	forms, _ = colle.GetFormsData()
-	for _, item := range forms {
-		if item.FormName == params["formName"] {
-			response.Header().Add("content-type", "application/json")
-			json.NewEncoder(response).Encode(item.Fields)
-			return
-		}
+	fields, err := colle.GetFieldsFormData(params["formname"])
+	response.Header().Add("content-type", "application/json")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+	} else {
+		json.NewEncoder(response).Encode(fields)
 	}
 }
 
