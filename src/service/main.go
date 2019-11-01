@@ -40,7 +40,7 @@ func main() {
 	createFieldRequests(router)
 	createFormRequests(router)
 
-	log.Fatal(http.ListenAndServe(":8001", router))
+	log.Fatal(http.ListenAndServe(":8000", router))
 }
 
 //CreateFieldRequests function
@@ -98,19 +98,15 @@ func deleteForm(response http.ResponseWriter, request *http.Request) {
 	}
 }
 
+//Use mongo ok
 func createForm(response http.ResponseWriter, request *http.Request) {
 	var form structs.Form
 	_ = json.NewDecoder(request.Body).Decode(&form)
 	response.Header().Add("content-type", "application/json")
-	for _, formx := range forms {
-		if formx.FormName == form.FormName {
-			json.NewEncoder(response).Encode(forms)
-			return
-		}
-	}
+
 	forms = append(forms, form)
 	form, err := colle.SaveFormData(form)
-	//colle.SaveUserData(form)
+
 	if err != nil {
 		log.Println(err)
 		response.WriteHeader(http.StatusInternalServerError)
@@ -159,29 +155,31 @@ func addFieldForm(form structs.Form, field structs.Field, position int) {
 	forms[position].Fields = append(forms[position].Fields, field)
 }
 
+//Use mongo ok
 func getField(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
+	fields, err := colle.GetFieldsFormData(params["formName"])
+	response.Header().Add("content-type", "application/json")
 
-	for _, item := range forms {
-		if item.FormName == params["formName"] {
-			for _, item := range item.Fields {
-				if item.Name == params["name"] {
-					response.Header().Add("content-type", "application/json")
-					json.NewEncoder(response).Encode(item)
-					return
-				}
-			}
+	if err != nil {
+		fmt.Println(err.Error())
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`{ "message": "` + err.Error() + `" }`))
+		return
+	}
+
+	for _, item := range fields {
+		if item.Name == params["name"] {
+			json.NewEncoder(response).Encode(item)
 			return
 		}
 	}
-
-	response.Header().Add("content-type", "application/json")
-	json.NewEncoder(response).Encode(&structs.Field{})
 }
 
+//Use mongo - ok
 func getFields(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
-	fields, err := colle.GetFieldsFormData(params["formname"])
+	fields, err := colle.GetFieldsFormData(params["formName"])
 	response.Header().Add("content-type", "application/json")
 
 	if err != nil {

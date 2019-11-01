@@ -31,9 +31,10 @@ func GetFieldsFormData(formName string) ([]structs.Field, error) {
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
 
 	var form structs.Form
-	filter := bson.D{{"formname", formName}}
+	filter := bson.M{"formname": formName}
+	fmt.Println("Formname:" + formName)
 
-	err := collection.FindOne(ctx, filter).Decode(form)
+	err := collection.FindOne(ctx, filter).Decode(&form)
 
 	if err != nil {
 		return nil, err
