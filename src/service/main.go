@@ -59,7 +59,7 @@ func createFormRequests(router *mux.Router) {
 	router.HandleFunc("/form/{formName}", deleteForm).Methods("DELETE")
 }
 
-//GetForm function
+//use mongo ok
 func getForm(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
 	forms, _ = colle.GetFormsData()
@@ -74,9 +74,9 @@ func getForm(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(&structs.Form{})
 }
 
+//use mongo ok
 func getForms(response http.ResponseWriter, request *http.Request) {
 	response.Header().Add("content-type", "application/json")
-	//colle.GetFormsData()
 	forms, err := colle.GetFormsData()
 	if err != nil {
 		fmt.Println(err.Error())
@@ -84,21 +84,20 @@ func getForms(response http.ResponseWriter, request *http.Request) {
 	json.NewEncoder(response).Encode(forms)
 }
 
+//use mongo ok
 func deleteForm(response http.ResponseWriter, request *http.Request) {
 	params := mux.Vars(request)
-	for index, item := range forms {
-		if item.FormName == params["formName"] {
-			forms = append(forms[:index], forms[index+1:]...)
-			response.Header().Add("content-type", "application/json")
-			json.NewEncoder(response).Encode(forms)
-			break
-		}
-		response.Header().Add("content-type", "application/json")
-		json.NewEncoder(response).Encode(forms)
+	err := colle.DeleteForm(params["formName"])
+	response.Header().Add("content-type", "application/json")
+	if err != nil {
+		log.Println(err)
+		response.WriteHeader(http.StatusInternalServerError)
+		response.Write([]byte(`"message" : "` + err.Error() + `"`))
 	}
+	response.Write([]byte(`"message" : "Sucesfull delete!"`))
 }
 
-//Use mongo ok
+//use mongo ok
 func createForm(response http.ResponseWriter, request *http.Request) {
 	var form structs.Form
 	_ = json.NewDecoder(request.Body).Decode(&form)

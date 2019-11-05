@@ -65,3 +65,14 @@ func GetFormsData() ([]structs.Form, error) {
 
 	return forms, nil
 }
+
+func DeleteForm(formName string) error {
+	collection := conn.GetConn().Database("theveloper").Collection("forms")
+	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
+	filter := bson.M{"formname": formName}
+	_, err := collection.DeleteOne(ctx, filter)
+	if err != nil {
+		return err
+	}
+	return nil
+}
