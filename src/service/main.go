@@ -26,6 +26,7 @@ var forms []structs.Form
 
 //Função principal
 func main() {
+	testaFace()
 	fmt.Println("start serviceGO")
 	userConnection.Dsn = "mysql:dbname=web;host=127.0.0.1"
 	userConnection.User = "root"
@@ -41,6 +42,7 @@ func main() {
 	createFormRequests(router)
 
 	log.Fatal(http.ListenAndServe(":8000", router))
+
 }
 
 //CreateFieldRequests function

@@ -66,6 +66,7 @@ func GetFormsData() ([]structs.Form, error) {
 	return forms, nil
 }
 
+//DeleteForm function
 func DeleteForm(formName string) error {
 	collection := conn.GetConn().Database("theveloper").Collection("forms")
 	ctx, _ := context.WithTimeout(context.Background(), 30*time.Second)
