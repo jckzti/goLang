@@ -26,7 +26,6 @@ var forms []structs.Form
 
 //Função principal
 func main() {
-	testaFace()
 	fmt.Println("start serviceGO")
 	userConnection.Dsn = "mysql:dbname=web;host=127.0.0.1"
 	userConnection.User = "root"
